@@ -1,0 +1,4 @@
+Add the following code to add 2 GeoJSON layers:
+
+    addGeoJSONLayer("lines.geojson", "Route", [200, 0, 0, 1], false);
+    addGeoJSONLayer("points.geojson", "Street Lights", [200, 200, 0, 1], false);

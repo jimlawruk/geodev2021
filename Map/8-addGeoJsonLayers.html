@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>Demo Map</title>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+
+    <link href="https://js.arcgis.com/4.16/esri/css/main.css" rel="stylesheet" type="text/css">
+    <script src="https://js.arcgis.com/4.16"></script>
+</head>
+
+<script>
+    require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/widgets/BasemapToggle",
+        "esri/widgets/LayerList",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Locate",
+
+        "esri/Graphic",
+        "esri/layers/GraphicsLayer",
+        "esri/geometry/Point",
+        "esri/geometry/Polyline",
+        "esri/request",
+        "esri/symbols/SimpleLineSymbol",
+        "esri/geometry/SpatialReference",
+    ], function (
+        Map, MapView,
+        BasemapToggle,
+        LayerList,
+        FeatureLayer,
+        Locate,
+        Graphic, GraphicsLayer, Point, Polyline, request, SimpleLineSymbol, SpatialReference,
+    ) {
+
+        var map = new Map({
+            basemap: "streets-night-vector"
+        });
+
+        var view = new MapView({
+            container: "viewDiv",
+            map: map,
+            zoom: 14,
+            center: [-76.925, 40.245]
+        });
+
+        var toggle = new BasemapToggle({
+            titleVisible: true,
+            view: view
+        });
+        view.ui.add(toggle, "bottom-right");
+
+        var layerList = new LayerList({
+            view: view
+        });
+        view.ui.add(layerList, "top-right");
+
+        var locateBtn = new Locate({
+            view: view
+        });
+        view.ui.add(locateBtn, "top-left");
+
+        addGeoJSONLayer("lines.geojson", "Route", [200, 0, 0, 1], false);
+        addGeoJSONLayer("points.geojson", "Street Lights", [200, 200, 0, 1], false);
+
+        function addGeoJSONLayer(fileName, title, colorArray, visible) {
+        request(fileName, { responseType: 'json' }).then(function (response) {
+            var geoJson = response.data;
+            var type = geoJson.features.length && geoJson.features[0].geometry.type;
+            var graphics;
+            if (type === 'LineString') {
+                graphics = getLineEsriGraphicsFromGeoJson(geoJson, 4326, colorArray);
+            }
+            else {
+                var graphics = getPointEsriGraphicsFromGeoJson(geoJson, 4326, colorArray);
+            }
+            var graphicsLayer = new GraphicsLayer();
+            graphicsLayer.visible = visible;
+            graphicsLayer.title = title;
+            graphics.forEach(function (graphic) {
+                graphicsLayer.add(graphic);
+            });
+            map.add(graphicsLayer);
+        });
+    }
+
+    function getPointEsriGraphicsFromGeoJson(geoJson, wkid, colorArray) {
+        return geoJson.features.map(function (feature, i) {
+            var coordinates = feature.geometry.coordinates;
+
+            var point = new Point({
+                'type': 'point',
+                'longitude': coordinates[0],
+                'latitude': coordinates[1],
+                'spatialReference': new SpatialReference({ 'wkid': wkid })
+            });
+
+            var markerSymbol = {
+                type: "simple-marker",
+                color: colorArray,
+                size: 8,
+                outline: {
+                    color: [255, 255, 255],
+                    width: 2
+                }
+            };
+            var graphicDefinition = getGraphicDefinition(feature, point, markerSymbol);
+            var pointGraphic = new Graphic(graphicDefinition);
+            return pointGraphic;
+        });
+    }
+
+    function getLineEsriGraphicsFromGeoJson(geoJson, wkid, colorArray) {
+        return geoJson.features.map(function (feature, i) {
+            var paths = feature.geometry.coordinates || feature.geometry.paths;
+            var polyline = new Polyline({
+                'type': 'polyline',
+                'paths': paths,
+                'spatialReference': new SpatialReference({ 'wkid': wkid })
+            });
+            var lineSymbol = new SimpleLineSymbol({ type: "simple-line", color: colorArray, width: 2, style: "solid" });
+            var graphicDefinition = getGraphicDefinition(feature, polyline, lineSymbol);
+            var polylineGraphic = new Graphic(graphicDefinition);
+            return polylineGraphic;
+        });
+    }
+
+    function getGraphicDefinition(feature, geometry, symbol) {
+        var graphicDefinition = {
+            geometry: geometry,
+            symbol: symbol,
+            attributes: feature.properties || feature.attributes,
+            popupTemplate: {
+                title: "Segment",
+                content: [{
+                    type: "fields",
+                    fieldInfos: []
+                }]
+            }
+        }
+        for (var property in feature.properties) {
+            var fieldInfo = { "fieldName": property }
+            graphicDefinition.popupTemplate.content[0].fieldInfos.push(fieldInfo);
+        }
+        return graphicDefinition;
+    }
+
+    });
+
+    
+</script>
+
+<body>
+    <div id="viewDiv"></div>
+</body>
+
+</html>

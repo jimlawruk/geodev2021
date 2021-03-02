@@ -1,0 +1,22 @@
+ 1. Add to require:
+
+    "esri/layers/FeatureLayer",
+ 
+ 
+ FeatureLayer,
+
+ 2. Add code to add the feature layers:
+
+ var lightsLayer = new FeatureLayer({
+            url:
+                "https://services5.arcgis.com/wBdB5z26dRdLbBYy/arcgis/rest/services/Camp_Hill_Street_Lights/FeatureServer/0",
+	    title: "Street Lights"
+        });
+        map.add(lightsLayer);
+
+        var routesLayer = new FeatureLayer({
+            url:
+                "https://services5.arcgis.com/wBdB5z26dRdLbBYy/ArcGIS/rest/services/Collection_Routes/FeatureServer/0",
+            title: "Routes"
+        });
+        map.add(routesLayer);

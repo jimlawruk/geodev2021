@@ -1,0 +1,96 @@
+1. Add to require:
+
+        "esri/Graphic",
+        "esri/layers/GraphicsLayer",
+        "esri/geometry/Point",
+        "esri/geometry/Polyline",
+        "esri/request",
+        "esri/symbols/SimpleLineSymbol",
+        "esri/geometry/SpatialReference",
+ 
+ Graphic, GraphicsLayer, Point, Polyline, request, SimpleLineSymbol, SpatialReference,
+ 
+ 
+ 2. Add these two functions below the Layer List code:
+ 
+        function addGeoJSONLayer(fileName, title, colorArray, visible) {
+            request(fileName, { responseType: 'json' }).then(function (response) {
+                var geoJson = response.data;
+                var type = geoJson.features.length && geoJson.features[0].geometry.type;
+                var graphics;
+                if (type === 'LineString') {
+                    graphics = getLineEsriGraphicsFromGeoJson(geoJson, 4326, colorArray);
+                }
+                else {
+                    var graphics = getPointEsriGraphicsFromGeoJson(geoJson, 4326, colorArray);
+                }
+                var graphicsLayer = new GraphicsLayer();
+                graphicsLayer.visible = visible;
+                graphicsLayer.title = title;
+                graphics.forEach(function (graphic) {
+                    graphicsLayer.add(graphic);
+                });
+                map.add(graphicsLayer);
+            });
+        }
+
+        function getPointEsriGraphicsFromGeoJson(geoJson, wkid, colorArray) {
+            return geoJson.features.map(function (feature, i) {
+                var coordinates = feature.geometry.coordinates;
+
+                var point = new Point({
+                    'type': 'point',
+                    'longitude': coordinates[0],
+                    'latitude': coordinates[1],
+                    'spatialReference': new SpatialReference({ 'wkid': wkid })
+                });
+
+                var markerSymbol = {
+                    type: "simple-marker",
+                    color: colorArray,
+                    size: 8,
+                    outline: {
+                        color: [255, 255, 255],
+                        width: 2
+                    }
+                };
+                var graphicDefinition = getGraphicDefinition(feature, point, markerSymbol);
+                var pointGraphic = new Graphic(graphicDefinition);
+                return pointGraphic;
+            });
+        }
+
+        function getLineEsriGraphicsFromGeoJson(geoJson, wkid, colorArray) {
+            return geoJson.features.map(function (feature, i) {
+                var paths = feature.geometry.coordinates || feature.geometry.paths;
+                var polyline = new Polyline({
+                    'type': 'polyline',
+                    'paths': paths,
+                    'spatialReference': new SpatialReference({ 'wkid': wkid })
+                });
+                var lineSymbol = new SimpleLineSymbol({ type: "simple-line", color: colorArray, width: 2, style: "solid" });
+                var graphicDefinition = getGraphicDefinition(feature, polyline, lineSymbol);
+                var polylineGraphic = new Graphic(graphicDefinition);
+                return polylineGraphic;
+            });
+        }
+
+        function getGraphicDefinition(feature, geometry, symbol) {
+            var graphicDefinition = {
+                geometry: geometry,
+                symbol: symbol,
+                attributes: feature.properties || feature.attributes,
+                popupTemplate: {
+                    title: "Segment",
+                    content: [{
+                        type: "fields",
+                        fieldInfos: []
+                    }]
+                }
+            }
+            for (var property in feature.properties) {
+                var fieldInfo = { "fieldName": property }
+                graphicDefinition.popupTemplate.content[0].fieldInfos.push(fieldInfo);
+            }
+            return graphicDefinition;
+        }

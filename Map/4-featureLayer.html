@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>Demo Map</title>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+
+    <link href="https://js.arcgis.com/4.16/esri/css/main.css" rel="stylesheet" type="text/css">
+    <script src="https://js.arcgis.com/4.16"></script>
+</head>
+
+<script>
+    require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/widgets/BasemapToggle",
+        "esri/widgets/LayerList",
+        "esri/layers/FeatureLayer",
+    ], function (
+        Map, MapView,
+        BasemapToggle,
+        LayerList,
+        FeatureLayer
+    ) {
+
+        var map = new Map({
+            basemap: "streets-night-vector"
+        });
+
+        var view = new MapView({
+            container: "viewDiv",
+            map: map,
+            zoom: 14,
+            center: [-76.925, 40.245]
+        });
+
+        var toggle = new BasemapToggle({
+            titleVisible: true,
+            view: view
+        });
+        view.ui.add(toggle, "bottom-right");
+
+        var layerList = new LayerList({
+            view: view
+        });
+        view.ui.add(layerList, "top-right");
+
+        var lightsLayer = new FeatureLayer({
+            url:
+                "https://services5.arcgis.com/wBdB5z26dRdLbBYy/arcgis/rest/services/Camp_Hill_Street_Lights/FeatureServer/0",
+            title: "Street Lights"
+        });
+        map.add(lightsLayer);
+
+        var routesLayer = new FeatureLayer({
+            url:
+                "https://services5.arcgis.com/wBdB5z26dRdLbBYy/ArcGIS/rest/services/Collection_Routes/FeatureServer/0",
+            title: "Routes"
+        });
+        map.add(routesLayer);
+
+    });
+</script>
+
+<body>
+    <div id="viewDiv"></div>
+</body>
+
+</html>

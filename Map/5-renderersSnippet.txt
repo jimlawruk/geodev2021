@@ -1,0 +1,25 @@
+1. Add custom renderer to the point layer.
+
+lightsLayer.renderer = {
+            type: "simple",
+            symbol: {
+                type: "simple-marker",
+                size: 8,
+                color: [200, 200, 0],
+                outline: {
+                    width: 2,
+                    color: [255, 255, 255]
+                }
+            }
+        };
+
+2. Add custom renderer to the line layer.
+
+routesLayer.renderer = {
+            type: "simple",
+            symbol: {
+                type: "simple-line",
+                width: 2,
+                color: [200, 0, 0]                
+            }
+        };
